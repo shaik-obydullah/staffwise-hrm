@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Settings · StaffWise HRM{% endblock %}
+{% block page_title %}Settings &amp; security{% endblock %}
+{% block page_subtitle %}Administrator access and activity{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_audit') }}">Full audit trail</a>
+{% endblock %}
+
+{% block content %}
+    <div class="split">
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title">Change administrator PIN</h3>
+                <div class="card-sub mb-2">The PIN protects all employee and payroll data. Choose 4–8 digits.</div>
+
+                <form method="post" action="{{ path('app_settings_pin') }}" autocomplete="off">
+                    <input type="hidden" name="_token" value="{{ csrf_token('change_pin') }}">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label for="current_pin">Current PIN</label>
+                            <input type="password" id="current_pin" name="current_pin" inputmode="numeric" pattern="[0-9]*" maxlength="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new_pin">New PIN</label>
+                            <input type="password" id="new_pin" name="new_pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_pin">Confirm new PIN</label>
+                            <input type="password" id="confirm_pin" name="confirm_pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" type="submit">Update PIN</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Recent activity</h3>
+                        <div class="card-sub">Administrative audit trail</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_audit') }}">View all →</a>
+                </div>
+                {% if auditLogs|length == 0 %}
+                    <p class="muted small">No activity recorded yet.</p>
+                {% else %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>When</th><th>Action</th><th>Details</th></tr></thead>
+                            <tbody>
+                                {% for log in auditLogs %}
+                                    <tr>
+                                        <td class="nowrap small">{{ log.createdAt|date('j M Y H:i') }}</td>
+                                        <td><span class="audit-action">{{ log.action }}</span></td>
+                                        <td class="small">{{ log.details ?: '—' }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title mb-2">Administrator</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Username</th><td>{{ admin ? admin.userIdentifier : 'Not configured' }}</td></tr>
+                        <tr><th>Role</th><td>Administrator</td></tr>
+                        <tr><th>PIN storage</th><td>Hashed with password hashing</td></tr>
+                        <tr><th>Auto-lock</th><td>{{ idleTimeoutMinutes }} minutes idle</td></tr>
+                        <tr><th>Created</th><td>{{ admin ? admin.createdAt|date('j M Y') : '—' }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title mb-2">Data protection</h3>
+                <ul class="small muted" style="padding-left:18px;margin:0">
+                    <li>Employee and payroll data is stored in your MySQL database.</li>
+                    <li>Access requires the administrator PIN.</li>
+                    <li>The application locks automatically after {{ idleTimeoutMinutes }} minutes of inactivity.</li>
+                    <li>Every payroll, employee and rate change is written to the audit trail.</li>
+                    <li>Payslips can be printed or saved as PDF from the browser.</li>
+                </ul>
+                <div class="mt-3">
+                    <a class="btn btn-outline btn-sm" href="{{ path('app_lock') }}">Lock application now</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title mb-2">Environment</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Application</th><td>StaffWise HRM</td></tr>
+                        <tr><th>Framework</th><td>Symfony 7.4</td></tr>
+                        <tr><th>Database</th><td>MySQL 8.4</td></tr>
+                        <tr><th>Locale</th><td>United Kingdom</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,8 @@
+# Use session-backed CSRF protection for classic HTML forms.
+framework:
+    form:
+        csrf_protection:
+            token_id: submit
+
+    csrf_protection:
+        stateless_token_ids: []

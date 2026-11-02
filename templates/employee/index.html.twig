@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Employees · StaffWise HRM{% endblock %}
+{% block page_title %}Employees{% endblock %}
+{% block page_subtitle %}{{ employees|length }} {{ employees|length == 1 ? 'record' : 'records' }}{{ query ? ' matching “' ~ query ~ '”' : '' }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-primary" href="{{ path('app_employee_new') }}">Add employee</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        <form method="get" action="{{ path('app_employees') }}" class="search-form mb-2" role="search">
+            <span class="search-icon" aria-hidden="true">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+            </span>
+            <input type="search" name="q" value="{{ query }}" placeholder="Search name, job title or department" aria-label="Search employees">
+            <button class="btn btn-primary" type="submit">Search</button>
+            {% if query %}<a class="btn btn-outline btn-sm" href="{{ path('app_employees') }}">Clear</a>{% endif %}
+        </form>
+
+        {% if employees|length == 0 %}
+            <div class="empty">
+                <strong>{{ query ? 'No employees match your search' : 'No employee records yet' }}</strong>
+                {{ query ? 'Try a different name, role or department.' : 'Create your first employee record to start processing payroll.' }}
+                {% if not query %}
+                    <div class="mt-3"><a class="btn btn-primary btn-sm" href="{{ path('app_employee_new') }}">Add employee</a></div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Job title</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Pay</th>
+                            <th class="num">Hourly rate</th>
+                            <th class="num">Holiday balance</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                            <tr>
+                                <td>
+                                    <div class="employee-cell">
+                                        <div class="avatar">{{ employee.initials }}</div>
+                                        <div>
+                                            <a class="employee-name" href="{{ path('app_employee_show', {id: employee.id}) }}">{{ employee.fullName }}</a>
+                                            <div class="employee-meta">{{ employee.email ?: employee.niNumber ?: 'No contact details' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ employee.jobTitle ?: '—' }}</td>
+                                <td>{{ employee.department ?: '—' }}</td>
+                                <td>{{ ui.status_badge(employee.status) }}</td>
+                                <td class="small">{{ employee.payFrequency|capitalize }}</td>
+                                <td class="num">{{ ui.money(employee.hourlyRate) }}</td>
+                                <td class="num">{{ ui.hours(balances[employee.id] ?? 0) }}</td>
+                                <td class="right nowrap">
+                                    <a class="btn btn-outline btn-sm" href="{{ path('app_employee_show', {id: employee.id}) }}">View</a>
+                                    <a class="btn btn-outline btn-sm" href="{{ path('app_employee_edit', {id: employee.id}) }}">Edit</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

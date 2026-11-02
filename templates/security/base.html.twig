@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}StaffWise HRM{% endblock %}</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="login-brand">
+            <div class="brand-mark">SW</div>
+            <div>
+                <div class="brand-name" style="color: var(--ink)">StaffWise</div>
+                <div class="brand-sub">UK HR &amp; Payroll</div>
+            </div>
+        </div>
+
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="flash flash-{{ type }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {% block content %}{% endblock %}
+
+        <div class="login-footer">Offline-first payroll. Data stays on your server.</div>
+    </div>
+</div>
+</body>
+</html>

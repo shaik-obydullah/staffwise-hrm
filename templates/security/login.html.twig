@@ -1,0 +1,28 @@
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Sign in · StaffWise HRM{% endblock %}
+
+{% block content %}
+    <h1>Administrator sign in</h1>
+    <p class="sub">Enter your PIN to unlock StaffWise.</p>
+
+    {% if app.request.query.get('locked') %}
+        <div class="notice warn mb-2">The application locked automatically after a period of inactivity.</div>
+    {% endif %}
+
+    {% if error %}
+        <div class="flash flash-error">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_login') }}" autocomplete="off">
+        <input type="hidden" name="_username" value="admin">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <div class="form-group">
+            <label for="pin">PIN</label>
+            <input type="password" id="pin" name="_password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autofocus required placeholder="••••">
+        </div>
+
+        <button class="btn btn-primary mt-3" type="submit">Unlock StaffWise</button>
+    </form>
+{% endblock %}

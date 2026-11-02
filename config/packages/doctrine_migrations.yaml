@@ -1,0 +1,8 @@
+doctrine_migrations:
+    enable_service_migrations: true
+    migrations_paths:
+        'App\Migrations': '%kernel.project_dir%/src/Migrations'
+    enable_profiler: false
+    # MySQL DDL statements cause implicit commits; run migrations without a
+    # wrapping transaction to avoid Doctrine's "already committed" deprecation.
+    transactional: false

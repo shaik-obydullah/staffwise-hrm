@@ -1,0 +1,179 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Holidays · {{ employee.fullName }} · StaffWise HRM{% endblock %}
+{% block page_title %}Holiday ledger{% endblock %}
+{% block page_subtitle %}{{ employee.fullName }} · {{ employee.holidayEntitlementWeeks|number_format(1) }} weeks entitlement{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_holidays') }}">All holidays</a>
+    <a class="btn btn-outline" href="{{ path('app_employee_show', {id: employee.id}) }}">Employee profile</a>
+{% endblock %}
+
+{% block content %}
+    <div class="grid grid-4">
+        <div class="card"><div class="stat"><span class="stat-label">Balance</span><span class="stat-value">{{ ui.hours(balance) }}</span><span class="stat-note">Available to book</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Entitlement</span><span class="stat-value">{{ ui.hours(employee.holidayEntitlementHours) }}</span><span class="stat-note">{{ employee.holidayEntitlementWeeks|number_format(1) }} weeks × {{ employee.contractedWeeklyHours|number_format(1) }} h</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Accrued</span><span class="stat-value">{{ ui.hours(accrued) }}</span><span class="stat-note">From finalised payroll</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Taken / booked</span><span class="stat-value">{{ ui.hours(taken) }}</span><span class="stat-note">{{ bookings|length }} bookings</span></div></div>
+    </div>
+
+    <div class="grid grid-2 mt-4">
+        <div class="card">
+            <h3 class="card-title">Book holiday</h3>
+            <div class="card-sub mb-2">Working days are estimated automatically from the contracted weekly hours.</div>
+            {{ form_start(bookingForm) }}
+                {{ form_errors(bookingForm) }}
+                <div class="form-grid">
+                    {{ form_row(bookingForm.startDate) }}
+                    {{ form_row(bookingForm.endDate) }}
+                    {{ form_row(bookingForm.hours) }}
+                    <div class="full">{{ form_row(bookingForm.note) }}</div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Book holiday</button>
+                    {% if balance < 0 %}<span class="small" style="color:var(--amber)">Current balance is negative; accrual will catch up.</span>{% endif %}
+                </div>
+            {{ form_end(bookingForm) }}
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Manual adjustment</h3>
+            <div class="card-sub mb-2">Use positive hours to credit the balance and negative hours to debit it.</div>
+            {{ form_start(adjustmentForm) }}
+                {{ form_errors(adjustmentForm) }}
+                <div class="form-grid">
+                    {{ form_row(adjustmentForm.hours) }}
+                    <div class="full">{{ form_row(adjustmentForm.description) }}</div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" type="submit">Apply adjustment</button>
+                </div>
+            {{ form_end(adjustmentForm) }}
+
+            <div class="notice mt-3">
+                Accrual is posted when payroll is finalised. Entitlement shown is the configured annual target, not a pre-credited balance.
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Bookings</h3>
+                <div class="card-sub">Cancel a booking to restore the balance, or mark it as taken</div>
+            </div>
+        </div>
+        {% if bookings|length == 0 %}
+            <p class="muted small">No holiday bookings recorded.</p>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dates</th>
+                            <th class="num">Hours</th>
+                            <th>Status</th>
+                            <th>Note</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                            <tr>
+                                <td class="nowrap">{{ booking.startDate|date('j M Y') }} – {{ booking.endDate|date('j M Y') }}</td>
+                                <td class="num">{{ booking.hours|number_format(2) }}</td>
+                                <td>{{ ui.status_badge(booking.status) }}</td>
+                                <td class="small muted">{{ booking.note ?: '—' }}</td>
+                                <td class="right nowrap">
+                                    {% if booking.status == 'booked' %}
+                                        <form method="post" action="{{ path('app_holiday_taken', {id: employee.id, booking: booking.id}) }}" style="display:inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('holiday_taken_' ~ booking.id) }}">
+                                            <button class="btn btn-outline btn-sm" type="submit">Mark taken</button>
+                                        </form>
+                                        <form method="post" action="{{ path('app_holiday_cancel', {id: employee.id, booking: booking.id}) }}" style="display:inline" onsubmit="return confirm('Cancel this booking and restore the holiday balance?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('holiday_cancel_' ~ booking.id) }}">
+                                            <button class="btn btn-outline btn-sm" type="submit">Cancel</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Ledger</h3>
+                <div class="card-sub">Every change to the holiday balance</div>
+            </div>
+        </div>
+        {% if ledger|length == 0 %}
+            <p class="muted small">No ledger entries yet. Accrual begins when payroll is finalised.</p>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Effective date</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Payroll</th>
+                            <th class="num">Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in ledger %}
+                            <tr>
+                                <td class="nowrap small">{{ entry.effectiveDate|date('j M Y') }}</td>
+                                <td>{{ ui.ledger_type(entry.type) }}</td>
+                                <td class="small">{{ entry.description }}</td>
+                                <td class="small muted">{{ entry.payrollRun ? entry.payrollRun.payDate|date('j M Y') : '—' }}</td>
+                                <td class="num {{ entry.hours >= 0 ? 'ledger-plus' : 'ledger-minus' }}">{{ entry.hours >= 0 ? '+' : '' }}{{ entry.hours|number_format(2) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><th colspan="4">Balance</th><th class="num">{{ balance|number_format(2) }} h</th></tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+    const start = document.getElementById('{{ bookingForm.startDate.vars.id }}');
+    const end = document.getElementById('{{ bookingForm.endDate.vars.id }}');
+    const hours = document.getElementById('{{ bookingForm.hours.vars.id }}');
+    const dailyHours = {{ (employee.contractedWeeklyHours / 5)|json_encode|raw }};
+
+    if (!start || !end || !hours) return;
+
+    function estimate() {
+        if (!start.value || !end.value) return;
+        const startDate = new Date(start.value + 'T00:00:00');
+        const endDate = new Date(end.value + 'T00:00:00');
+        if (endDate < startDate) return;
+
+        let days = 0;
+        const cursor = new Date(startDate);
+        while (cursor <= endDate) {
+            const day = cursor.getDay();
+            if (day !== 0 && day !== 6) days++;
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        hours.value = (days * dailyHours).toFixed(2);
+    }
+
+    start.addEventListener('change', estimate);
+    end.addEventListener('change', estimate);
+})();
+</script>
+{% endblock %}

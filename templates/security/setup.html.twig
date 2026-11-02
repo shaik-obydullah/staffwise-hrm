@@ -1,0 +1,29 @@
+{% extends 'security/base.html.twig' %}
+
+{% block title %}Set up StaffWise HRM{% endblock %}
+
+{% block content %}
+    <h1>Create your administrator PIN</h1>
+    <p class="sub">StaffWise is ready. Choose a 4–8 digit PIN to protect employee and payroll data on this installation.</p>
+
+    {% if error %}
+        <div class="flash flash-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ path('app_setup') }}" autocomplete="off">
+        <input type="hidden" name="_token" value="{{ csrf_token('setup_admin') }}">
+
+        <div class="form-group mb-2">
+            <label for="pin">Administrator PIN</label>
+            <input type="password" id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" autofocus required placeholder="4–8 digits">
+            <span class="help">Digits only. You will use this PIN to sign in.</span>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_pin">Confirm PIN</label>
+            <input type="password" id="confirm_pin" name="confirm_pin" inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" required>
+        </div>
+
+        <button class="btn btn-primary mt-3" type="submit">Create PIN and continue</button>
+    </form>
+{% endblock %}

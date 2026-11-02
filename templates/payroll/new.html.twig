@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New payroll run · StaffWise HRM{% endblock %}
+{% block page_title %}New payroll run{% endblock %}
+{% block page_subtitle %}Select the period and tax year rates to apply{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_payroll_index') }}">Back to payroll</a>
+{% endblock %}
+
+{% block content %}
+    <div class="split">
+        <div class="card">
+            {{ form_start(form) }}
+                {{ form_errors(form) }}
+
+                <div class="form-grid">
+                    {{ form_row(form.frequency) }}
+                    {{ form_row(form.taxYear) }}
+                    {{ form_row(form.periodStart) }}
+                    {{ form_row(form.periodEnd) }}
+                    {{ form_row(form.payDate) }}
+                    <div class="full">{{ form_row(form.notes) }}</div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Create payroll run</button>
+                    <a class="btn btn-outline" href="{{ path('app_payroll_index') }}">Cancel</a>
+                </div>
+            {{ form_end(form) }}
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">What happens next</h3>
+            <p class="small muted">A payslip is prepared for every active employee using their contracted hours. You can adjust hours, overtime and bonuses before finalising.</p>
+            <hr class="divider">
+            <h3 class="card-title">Calculation basis</h3>
+            <ul class="small muted" style="padding-left:18px;margin:0">
+                <li>Gross pay = hours × hourly rate</li>
+                <li>Overtime is paid at {{ constant('App\\Service\\PayrollCalculator::OVERTIME_MULTIPLIER') }}× the hourly rate</li>
+                <li>PAYE uses annualised tax bands and the employee's tax code</li>
+                <li>Employee and employer NI use the selected tax year thresholds</li>
+                <li>Pension, student loan and Employment Allowance are applied automatically</li>
+                <li>Holiday is accrued at the configured rate when the run is finalised</li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}

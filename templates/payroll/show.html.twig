@@ -1,0 +1,188 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Payroll {{ run.payDate ? run.payDate|date('j M Y') : '' }} · StaffWise HRM{% endblock %}
+{% block page_title %}Payroll run{% endblock %}
+{% block page_subtitle %}{{ run.periodStart ? run.periodStart|date('j M Y') : '' }} – {{ run.periodEnd ? run.periodEnd|date('j M Y') : '' }} · {{ run.frequency|capitalize }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_payroll_index') }}">All runs</a>
+    {% if run.finalised %}
+        <a class="btn btn-primary" href="{{ path('app_hmrc_show', {id: run.id}) }}">HMRC liability</a>
+    {% else %}
+        <form method="post" action="{{ path('app_payroll_finalise', {id: run.id}) }}" style="display:inline">
+            <input type="hidden" name="_token" value="{{ csrf_token('payroll_finalise_' ~ run.id) }}">
+            <button class="btn btn-teal" type="submit">Finalise payroll</button>
+        </form>
+        <form method="post" action="{{ path('app_payroll_delete', {id: run.id}) }}" style="display:inline" onsubmit="return confirm('Delete this draft payroll run?')">
+            <input type="hidden" name="_token" value="{{ csrf_token('payroll_delete_' ~ run.id) }}">
+            <button class="btn btn-outline" type="submit">Delete draft</button>
+        </form>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="card mb-2">
+        <div class="card-header" style="margin-bottom:0">
+            <div class="employee-cell">
+                <div class="avatar avatar-lg" style="background:var(--accent-soft);color:var(--accent)">£</div>
+                <div>
+                    <div style="font-size:17px;font-weight:700">{{ run.payDate ? run.payDate|date('j F Y') : 'No pay date' }} {{ ui.status_badge(run.status) }}</div>
+                    <div class="muted small">{{ run.payslips|length }} payslips · Tax year {{ run.taxYear ? run.taxYear.name : '—' }}{% if run.finalised %} · Reference {{ run.paymentReference }}{% endif %}</div>
+                    {% if run.notes %}<div class="small muted mt-2">{{ run.notes }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="right small">
+                <div class="muted">Period</div>
+                <div><strong>{{ run.periodStart ? run.periodStart|date('j M Y') : '—' }} – {{ run.periodEnd ? run.periodEnd|date('j M Y') : '—' }}</strong></div>
+                {% if run.finalised %}
+                    <div class="muted mt-2">HMRC due</div>
+                    <div><strong>{{ run.hmrcDueDate ? run.hmrcDueDate|date('j M Y') : '—' }}</strong></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-4">
+        <div class="card"><div class="stat"><span class="stat-label">Gross pay</span><span class="stat-value">{{ ui.money(run.grossTotal) }}</span><span class="stat-note">Total earnings</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Net pay</span><span class="stat-value">{{ ui.money(run.netTotal) }}</span><span class="stat-note">Take-home total</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">HMRC liability</span><span class="stat-value">{{ ui.money(run.hmrcLiabilityTotal) }}</span><span class="stat-note">PAYE, NI and student loans</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Employer cost</span><span class="stat-value">{{ ui.money(run.employerCostTotal) }}</span><span class="stat-note">Gross plus employer contributions</span></div></div>
+    </div>
+
+    <div class="grid grid-4 mt-2">
+        <div class="card card-tight"><div class="stat"><span class="stat-label">PAYE</span><span class="stat-value" style="font-size:20px">{{ ui.money(run.payeTotal) }}</span></div></div>
+        <div class="card card-tight"><div class="stat"><span class="stat-label">Employee NI</span><span class="stat-value" style="font-size:20px">{{ ui.money(run.employeeNiTotal) }}</span></div></div>
+        <div class="card card-tight"><div class="stat"><span class="stat-label">Employer NI</span><span class="stat-value" style="font-size:20px">{{ ui.money(run.employerNiTotal) }}</span><div class="stat-note">Employment Allowance {{ ui.money(run.employmentAllowanceApplied) }}</div></div></div>
+        <div class="card card-tight"><div class="stat"><span class="stat-label">Pension + student loan</span><span class="stat-value" style="font-size:20px">{{ ui.money(run.pensionEmployeeTotal + run.pensionEmployerTotal + run.studentLoanTotal) }}</span></div></div>
+    </div>
+
+    {% if missingEmployees|length > 0 and run.draft %}
+        <div class="notice warn mt-4">
+            <strong>{{ missingEmployees|length }} active {{ missingEmployees|length == 1 ? 'employee has' : 'employees have' }} no payslip on this run.</strong>
+            <form method="post" action="{{ path('app_payroll_generate', {id: run.id}) }}" style="display:inline">
+                <input type="hidden" name="_token" value="{{ csrf_token('payroll_generate_' ~ run.id) }}">
+                <button class="btn btn-outline btn-sm" type="submit">Add missing employees</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">Payslips</h3>
+                <div class="card-sub">{% if run.draft %}Adjust hours, overtime and bonuses, then recalculate each row{% else %}Finalised payslips are read-only{% endif %}</div>
+            </div>
+        </div>
+
+        {% if run.payslips|length == 0 %}
+            <div class="empty">
+                <strong>No payslips on this run</strong>
+                Add active employees to begin calculating pay.
+            </div>
+        {% else %}
+            {% if run.draft %}
+                {% for payslip in run.payslips %}
+                    <form id="pf-{{ payslip.id }}" method="post" action="{{ path('app_payroll_update_payslip', {run: run.id, payslip: payslip.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('payslip_update_' ~ payslip.id) }}">
+                    </form>
+                {% endfor %}
+            {% endif %}
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th class="num">Hours</th>
+                            <th class="num">Overtime</th>
+                            <th class="num">Bonus</th>
+                            <th class="num">Gross</th>
+                            <th class="num">PAYE</th>
+                            <th class="num">NI</th>
+                            <th class="num">Pension</th>
+                            <th class="num">Student loan</th>
+                            <th class="num">Net pay</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payslip in run.payslips %}
+                            <tr>
+                                <td>
+                                    <div class="employee-cell">
+                                        <div class="avatar">{{ payslip.employee.initials }}</div>
+                                        <div>
+                                            <a class="employee-name" href="{{ path('app_employee_show', {id: payslip.employee.id}) }}">{{ payslip.employee.fullName }}</a>
+                                            <div class="employee-meta">{{ payslip.taxCode }} · NI {{ payslip.niCategory }} · {{ payslip.hourlyRate|number_format(2) }}/h</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="num">
+                                    {% if run.draft %}
+                                        <input form="pf-{{ payslip.id }}" type="number" name="hours_worked" step="0.01" min="0" value="{{ payslip.hoursWorked }}" class="inline-input" style="width:78px">
+                                    {% else %}{{ payslip.hoursWorked|number_format(2) }}{% endif %}
+                                </td>
+                                <td class="num">
+                                    {% if run.draft %}
+                                        <input form="pf-{{ payslip.id }}" type="number" name="overtime_hours" step="0.01" min="0" value="{{ payslip.overtimeHours }}" style="width:78px">
+                                    {% else %}{{ payslip.overtimeHours|number_format(2) }}{% endif %}
+                                </td>
+                                <td class="num">
+                                    {% if run.draft %}
+                                        <input form="pf-{{ payslip.id }}" type="number" name="bonus" step="0.01" min="0" value="{{ payslip.bonus }}" style="width:86px">
+                                    {% else %}{{ ui.money(payslip.bonus) }}{% endif %}
+                                </td>
+                                <td class="num">{{ ui.money(payslip.grossPay) }}</td>
+                                <td class="num">{{ ui.money(payslip.paye) }}</td>
+                                <td class="num">{{ ui.money(payslip.employeeNi) }}</td>
+                                <td class="num">{{ ui.money(payslip.pensionEmployee) }}</td>
+                                <td class="num">{{ ui.money(payslip.studentLoan) }}</td>
+                                <td class="num"><strong>{{ ui.money(payslip.netPay) }}</strong></td>
+                                <td class="right nowrap">
+                                    {% if run.draft %}
+                                        <button form="pf-{{ payslip.id }}" class="btn btn-outline btn-sm" type="submit">Recalculate</button>
+                                        <a class="btn btn-outline btn-sm" href="{{ path('app_payslip_show', {id: payslip.id}) }}">Preview</a>
+                                    {% else %}
+                                        <a class="btn btn-outline btn-sm" href="{{ path('app_payslip_show', {id: payslip.id}) }}">View</a>
+                                        <a class="btn btn-outline btn-sm" href="{{ path('app_payslip_print', {id: payslip.id}) }}">Print</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Totals</th>
+                            <th class="num">{{ run.payslips|reduce((sum, p) => sum + p.hoursWorked, 0)|number_format(2) }}</th>
+                            <th></th>
+                            <th class="num">{{ ui.money(run.payslips|reduce((sum, p) => sum + p.bonus, 0)) }}</th>
+                            <th class="num">{{ ui.money(run.grossTotal) }}</th>
+                            <th class="num">{{ ui.money(run.payeTotal) }}</th>
+                            <th class="num">{{ ui.money(run.employeeNiTotal) }}</th>
+                            <th class="num">{{ ui.money(run.pensionEmployeeTotal) }}</th>
+                            <th class="num">{{ ui.money(run.studentLoanTotal) }}</th>
+                            <th class="num">{{ ui.money(run.netTotal) }}</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if run.finalised %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Finalisation</h3>
+                    <div class="card-sub">This run was finalised on {{ run.finalisedAt ? run.finalisedAt|date('j M Y H:i') : '—' }}</div>
+                </div>
+                <a class="btn btn-outline" href="{{ path('app_hmrc_show', {id: run.id}) }}">View HMRC liability</a>
+            </div>
+            <div class="notice">
+                Holiday accrual has been posted to employee ledgers. To correct a finalised run, create a new adjustment run for the same period.
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

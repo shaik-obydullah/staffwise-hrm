@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}HMRC liability {{ run.paymentReference }} · StaffWise HRM{% endblock %}
+{% block page_title %}HMRC liability{% endblock %}
+{% block page_subtitle %}{{ run.periodStart|date('j M Y') }} – {{ run.periodEnd|date('j M Y') }} · {{ run.frequency|capitalize }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_hmrc_index') }}">All liabilities</a>
+    <a class="btn btn-outline" href="{{ path('app_payroll_show', {id: run.id}) }}">Payroll run</a>
+{% endblock %}
+
+{% block content %}
+    {% if not run.finalised %}
+        <div class="notice warn mb-2">This run is still a draft. Figures below will change until it is finalised.</div>
+    {% endif %}
+
+    <div class="grid grid-4">
+        <div class="card"><div class="stat"><span class="stat-label">Total liability</span><span class="stat-value">{{ ui.money(run.hmrcLiabilityTotal) }}</span><span class="stat-note">Due {{ run.hmrcDueDate ? run.hmrcDueDate|date('j M Y') : '—' }}</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">PAYE</span><span class="stat-value" style="font-size:22px">{{ ui.money(run.payeTotal) }}</span><span class="stat-note">Income tax</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">National Insurance</span><span class="stat-value" style="font-size:22px">{{ ui.money(run.employeeNiTotal + run.employerNiTotal - run.employmentAllowanceApplied) }}</span><span class="stat-note">After {{ ui.money(run.employmentAllowanceApplied) }} allowance</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Student loans</span><span class="stat-value" style="font-size:22px">{{ ui.money(run.studentLoanTotal) }}</span><span class="stat-note">Plan deductions</span></div></div>
+    </div>
+
+    <div class="split mt-4">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Liability breakdown</h3>
+                    <div class="card-sub">Payment reference {{ run.paymentReference }}</div>
+                </div>
+                {{ ui.status_badge(run.status) }}
+            </div>
+            <table class="payslip-lines">
+                <tbody>
+                    <tr><td>PAYE income tax</td><td class="num">{{ ui.money(run.payeTotal) }}</td></tr>
+                    <tr><td>Employee National Insurance</td><td class="num">{{ ui.money(run.employeeNiTotal) }}</td></tr>
+                    <tr><td>Employer National Insurance</td><td class="num">{{ ui.money(run.employerNiTotal) }}</td></tr>
+                    <tr><td>Employment Allowance adjustment</td><td class="num">−{{ ui.money(run.employmentAllowanceApplied) }}</td></tr>
+                    <tr><td>Student loan deductions</td><td class="num">{{ ui.money(run.studentLoanTotal) }}</td></tr>
+                    <tr class="total"><td>Total HMRC liability</td><td class="num">{{ ui.money(run.hmrcLiabilityTotal) }}</td></tr>
+                </tbody>
+            </table>
+            <p class="help mt-2">Payment reference and due date are indicative. Always confirm your HMRC payment schedule before paying.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title mb-2">Payment details</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Payment reference</th><td class="mono">{{ run.paymentReference }}</td></tr>
+                        <tr><th>Due date</th><td>{{ run.hmrcDueDate ? run.hmrcDueDate|date('j M Y') : '—' }}</td></tr>
+                        <tr><th>Pay date</th><td>{{ run.payDate ? run.payDate|date('j M Y') : '—' }}</td></tr>
+                        <tr><th>Tax year</th><td>{{ run.taxYear ? run.taxYear.name : '—' }}</td></tr>
+                        <tr><th>Frequency</th><td>{{ run.frequency|capitalize }}</td></tr>
+                        <tr><th>Gross pay</th><td>{{ ui.money(run.grossTotal) }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title mb-2">Pension contributions</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Employee pension</th><td class="num">{{ ui.money(run.pensionEmployeeTotal) }}</td></tr>
+                        <tr><th>Employer pension</th><td class="num">{{ ui.money(run.pensionEmployerTotal) }}</td></tr>
+                        <tr><th>Total pension</th><td class="num"><strong>{{ ui.money(run.pensionEmployeeTotal + run.pensionEmployerTotal) }}</strong></td></tr>
+                    </tbody>
+                </table>
+                <p class="help mt-2">Pension contributions are paid to the pension provider, not HMRC.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <h3 class="card-title mb-2">Employee-level liability</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th class="num">Gross</th>
+                        <th class="num">PAYE</th>
+                        <th class="num">Employee NI</th>
+                        <th class="num">Employer NI</th>
+                        <th class="num">Student loan</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payslip in run.payslips %}
+                        <tr>
+                            <td><a class="employee-name" href="{{ path('app_payslip_show', {id: payslip.id}) }}">{{ payslip.employee.fullName }}</a></td>
+                            <td class="num">{{ ui.money(payslip.grossPay) }}</td>
+                            <td class="num">{{ ui.money(payslip.paye) }}</td>
+                            <td class="num">{{ ui.money(payslip.employeeNi) }}</td>
+                            <td class="num">{{ ui.money(payslip.employerNi) }}</td>
+                            <td class="num">{{ ui.money(payslip.studentLoan) }}</td>
+                            <td class="right"><a class="btn btn-outline btn-sm" href="{{ path('app_payslip_show', {id: payslip.id}) }}">Payslip</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

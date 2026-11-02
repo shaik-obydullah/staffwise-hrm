@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Add employee · StaffWise HRM{% endblock %}
+{% block page_title %}Add employee{% endblock %}
+{% block page_subtitle %}Create a workforce record with payroll settings{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_employees') }}">Back to employees</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {{ form_start(form) }}
+            {{ form_errors(form) }}
+
+            <div class="form-grid">
+                {{ form_row(form.firstName) }}
+                {{ form_row(form.lastName) }}
+                {{ form_row(form.email) }}
+                {{ form_row(form.phone) }}
+                <div class="full">{{ form_row(form.address) }}</div>
+                {{ form_row(form.niNumber) }}
+                {{ form_row(form.jobTitle) }}
+                {{ form_row(form.department) }}
+                {{ form_row(form.employmentStartDate) }}
+                {{ form_row(form.employmentEndDate) }}
+                {{ form_row(form.status) }}
+                {{ form_row(form.payFrequency) }}
+                {{ form_row(form.contractedWeeklyHours) }}
+                {{ form_row(form.holidayEntitlementWeeks) }}
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Pay and statutory settings</h3>
+                <div class="form-grid">
+                    {{ form_row(form.hourlyRate) }}
+                    {{ form_row(form.taxCode) }}
+                    {{ form_row(form.niCategory) }}
+                    {{ form_row(form.studentLoanPlan) }}
+                    {{ form_row(form.pensionOptIn) }}
+                    {{ form_row(form.pensionEmployeeRate) }}
+                    {{ form_row(form.pensionEmployerRate) }}
+                </div>
+                <p class="help mt-2">Leave pension rates blank to use the active tax year defaults.</p>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Create employee</button>
+                <a class="btn btn-outline" href="{{ path('app_employees') }}">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

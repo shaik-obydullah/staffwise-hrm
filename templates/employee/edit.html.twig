@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit {{ employee.fullName }} · StaffWise HRM{% endblock %}
+{% block page_title %}Edit employee{% endblock %}
+{% block page_subtitle %}{{ employee.fullName }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_employee_show', {id: employee.id}) }}">Back to profile</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {{ form_start(form) }}
+            {{ form_errors(form) }}
+
+            <div class="form-grid">
+                {{ form_row(form.firstName) }}
+                {{ form_row(form.lastName) }}
+                {{ form_row(form.email) }}
+                {{ form_row(form.phone) }}
+                <div class="full">{{ form_row(form.address) }}</div>
+                {{ form_row(form.niNumber) }}
+                {{ form_row(form.jobTitle) }}
+                {{ form_row(form.department) }}
+                {{ form_row(form.employmentStartDate) }}
+                {{ form_row(form.employmentEndDate) }}
+                {{ form_row(form.status) }}
+                {{ form_row(form.payFrequency) }}
+                {{ form_row(form.contractedWeeklyHours) }}
+                {{ form_row(form.holidayEntitlementWeeks) }}
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Pay and statutory settings</h3>
+                <div class="form-grid">
+                    {{ form_row(form.hourlyRate) }}
+                    {{ form_row(form.taxCode) }}
+                    {{ form_row(form.niCategory) }}
+                    {{ form_row(form.studentLoanPlan) }}
+                    {{ form_row(form.pensionOptIn) }}
+                    {{ form_row(form.pensionEmployeeRate) }}
+                    {{ form_row(form.pensionEmployerRate) }}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Save changes</button>
+                <a class="btn btn-outline" href="{{ path('app_employee_show', {id: employee.id}) }}">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

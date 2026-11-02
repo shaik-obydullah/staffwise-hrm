@@ -1,0 +1,59 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8067}:80"
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: "${APP_SECRET:-change-me-in-env-local}"
+      DATABASE_URL: "mysql://staffwise:staffwise@db:3306/staffwise?serverVersion=8.4&charset=utf8mb4"
+      RUN_MIGRATIONS: "1"
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - var_data:/var/www/html/var
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: staffwise
+      MYSQL_USER: staffwise
+      MYSQL_PASSWORD: staffwise
+      MYSQL_ROOT_PASSWORD: root
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ustaffwise", "-pstaffwise"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: "no"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    ports:
+      - "${PHPMYADMIN_PORT:-8068}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: "3306"
+      PMA_USER: staffwise
+      PMA_PASSWORD: staffwise
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  db_data:
+  vendor_data:
+  var_data:

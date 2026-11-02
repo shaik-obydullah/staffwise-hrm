@@ -1,0 +1,190 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}{{ employee.fullName }} · StaffWise HRM{% endblock %}
+{% block page_title %}{{ employee.fullName }}{% endblock %}
+{% block page_subtitle %}{{ employee.jobTitle ?: 'Employee record' }}{{ employee.department ? ' · ' ~ employee.department : '' }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_employee_edit', {id: employee.id}) }}">Edit record</a>
+    <form method="post" action="{{ path('app_employee_toggle', {id: employee.id}) }}" style="display:inline">
+        <input type="hidden" name="_token" value="{{ csrf_token('toggle_employee_' ~ employee.id) }}">
+        <button class="btn {{ employee.active ? 'btn-outline' : 'btn-teal' }}" type="submit">{{ employee.active ? 'Mark inactive' : 'Mark active' }}</button>
+    </form>
+    <a class="btn btn-primary" href="{{ path('app_holiday_show', {id: employee.id}) }}">Holiday ledger</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card mb-2">
+        <div class="employee-cell">
+            <div class="avatar avatar-lg">{{ employee.initials }}</div>
+            <div style="flex:1">
+                <div style="font-size:19px;font-weight:700">{{ employee.fullName }} {{ ui.status_badge(employee.status) }}</div>
+                <div class="muted">{{ employee.jobTitle ?: 'No job title set' }}{{ employee.department ? ' · ' ~ employee.department : '' }}</div>
+                <div class="small muted mt-2">
+                    {{ employee.email ?: 'No email' }} · {{ employee.phone ?: 'No phone' }}
+                    {% if employee.niNumber %} · NI {{ employee.niNumber }}{% endif %}
+                </div>
+            </div>
+            <div class="right">
+                <div class="muted small">{{ employee.payFrequency|capitalize }} pay</div>
+                <div style="font-size:22px;font-weight:750">{{ ui.money(employee.hourlyRate) }}<span class="muted" style="font-size:13px;font-weight:500"> / hour</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-4">
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Holiday balance</span>
+                <span class="stat-value">{{ ui.hours(balance) }}</span>
+                <span class="stat-note">Entitlement {{ ui.hours(employee.holidayEntitlementHours) }}</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Accrued</span>
+                <span class="stat-value">{{ ui.hours(accrued) }}</span>
+                <span class="stat-note">From finalised payroll</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Taken / booked</span>
+                <span class="stat-value">{{ ui.hours(taken) }}</span>
+                <span class="stat-note">{{ bookings|length }} booking records</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Tax code</span>
+                <span class="stat-value" style="font-size:24px">{{ employee.taxCode }}</span>
+                <span class="stat-note">NI category {{ employee.niCategory }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="split mt-4">
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Payslip history</h3>
+                        <div class="card-sub">Payslips generated for this employee</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_payroll_index') }}">Payroll runs →</a>
+                </div>
+                {% if payslips|length == 0 %}
+                    <p class="muted small">No payslips yet. Payslips appear once the employee is included in a payroll run.</p>
+                {% else %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Pay date</th>
+                                    <th class="num">Gross</th>
+                                    <th class="num">Deductions</th>
+                                    <th class="num">Net pay</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payslip in payslips %}
+                                    <tr>
+                                        <td class="small">{{ payslip.periodLabel }}</td>
+                                        <td class="nowrap">{{ payslip.payrollRun.payDate ? payslip.payrollRun.payDate|date('j M Y') : '—' }}</td>
+                                        <td class="num">{{ ui.money(payslip.grossPay) }}</td>
+                                        <td class="num">{{ ui.money(payslip.paye + payslip.employeeNi + payslip.pensionEmployee + payslip.studentLoan) }}</td>
+                                        <td class="num"><strong>{{ ui.money(payslip.netPay) }}</strong></td>
+                                        <td class="right"><a class="btn btn-outline btn-sm" href="{{ path('app_payslip_show', {id: payslip.id}) }}">View</a></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Recent holiday ledger</h3>
+                        <div class="card-sub">Accrual, bookings and adjustments</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_holiday_show', {id: employee.id}) }}">Manage holidays →</a>
+                </div>
+                {% if ledger|length == 0 %}
+                    <p class="muted small">No holiday entries yet. Accrual begins when a payroll run is finalised.</p>
+                {% else %}
+                    <table>
+                        <thead>
+                            <tr><th>Date</th><th>Type</th><th>Description</th><th class="num">Hours</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for entry in ledger|slice(0, 6) %}
+                            <tr>
+                                <td class="nowrap small">{{ entry.effectiveDate|date('j M Y') }}</td>
+                                <td>{{ ui.ledger_type(entry.type) }}</td>
+                                <td class="small">{{ entry.description }}</td>
+                                <td class="num {{ entry.hours >= 0 ? 'ledger-plus' : 'ledger-minus' }}">{{ entry.hours >= 0 ? '+' : '' }}{{ entry.hours|number_format(2) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title mb-2">Personal details</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Email</th><td>{{ employee.email ?: '—' }}</td></tr>
+                        <tr><th>Phone</th><td>{{ employee.phone ?: '—' }}</td></tr>
+                        <tr><th>NI number</th><td>{{ employee.niNumber ?: '—' }}</td></tr>
+                        <tr><th>Address</th><td>{{ employee.address ?: '—' }}</td></tr>
+                        <tr><th>Started</th><td>{{ employee.employmentStartDate ? employee.employmentStartDate|date('j M Y') : '—' }}</td></tr>
+                        <tr><th>Ended</th><td>{{ employee.employmentEndDate ? employee.employmentEndDate|date('j M Y') : '—' }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title mb-2">Payroll settings</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Pay frequency</th><td>{{ employee.payFrequency|capitalize }}</td></tr>
+                        <tr><th>Contracted hours</th><td>{{ employee.contractedWeeklyHours|number_format(2) }} / week</td></tr>
+                        <tr><th>Holiday entitlement</th><td>{{ employee.holidayEntitlementWeeks|number_format(2) }} weeks</td></tr>
+                        <tr><th>Pension</th><td>{{ employee.pensionOptIn ? 'Enrolled' : 'Not enrolled' }}</td></tr>
+                        <tr><th>Pension rates</th><td>{{ employee.pensionOptIn ? (employee.pensionEmployeeRate ?? 'Default') ~ '% employee / ' ~ (employee.pensionEmployerRate ?? 'Default') ~ '% employer' : '—' }}</td></tr>
+                        <tr><th>Student loan</th><td>{{ employee.studentLoanPlan == 'none' ? 'None' : employee.studentLoanPlan|replace({'plan': 'Plan ', 'postgrad': 'Postgraduate'}) }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title mb-2">Recent bookings</h3>
+                {% if bookings|length == 0 %}
+                    <p class="muted small">No holiday bookings recorded.</p>
+                {% else %}
+                    <table>
+                        <tbody>
+                        {% for booking in bookings|slice(0, 5) %}
+                            <tr>
+                                <td>
+                                    <div class="small">{{ booking.startDate|date('j M Y') }} – {{ booking.endDate|date('j M Y') }}</div>
+                                    <div class="employee-meta">{{ booking.hours|number_format(2) }} hours</div>
+                                </td>
+                                <td class="right">{{ ui.status_badge(booking.status) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% macro money(value) %}£{{ value|number_format(2, '.', ',') }}{% endmacro %}
+{% macro hours(value) %}{{ value|number_format(2, '.', ',') }} h{% endmacro %}
+{% macro status_badge(status) %}
+    {% if status == 'active' or status == 'finalised' or status == 'taken' %}<span class="badge badge-green">{{ status|capitalize }}</span>
+    {% elseif status == 'draft' or status == 'booked' %}<span class="badge badge-blue">{{ status|capitalize }}</span>
+    {% elseif status == 'inactive' or status == 'cancelled' %}<span class="badge">{{ status|capitalize }}</span>
+    {% else %}<span class="badge badge-amber">{{ status|capitalize }}</span>{% endif %}
+{% endmacro %}
+{% macro ledger_type(type) %}
+    {% if type == 'accrual' %}<span class="badge badge-teal">Accrual</span>
+    {% elseif type == 'booking' %}<span class="badge badge-blue">Booking</span>
+    {% elseif type == 'taken' %}<span class="badge badge-green">Taken</span>
+    {% elseif type == 'cancellation' %}<span class="badge badge-amber">Cancellation</span>
+    {% else %}<span class="badge">Adjustment</span>{% endif %}
+{% endmacro %}

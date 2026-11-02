@@ -1,0 +1,63 @@
+{{ form_errors(form) }}
+
+<div class="form-grid">
+    {{ form_row(form.name) }}
+    {{ form_row(form.effectiveFrom) }}
+    {{ form_row(form.effectiveTo) }}
+</div>
+
+<div class="form-section">
+    <h3 class="form-section-title">PAYE income tax</h3>
+    <div class="form-grid">
+        {{ form_row(form.personalAllowance) }}
+        {{ form_row(form.basicRate) }}
+        {{ form_row(form.basicRateLimit) }}
+        {{ form_row(form.higherRate) }}
+        {{ form_row(form.higherRateLimit) }}
+        {{ form_row(form.additionalRate) }}
+    </div>
+</div>
+
+<div class="form-section">
+    <h3 class="form-section-title">National Insurance</h3>
+    <div class="form-grid">
+        {{ form_row(form.niPrimaryThreshold) }}
+        {{ form_row(form.niUpperEarningsLimit) }}
+        {{ form_row(form.niEmployeeRate) }}
+        {{ form_row(form.niEmployeeUpperRate) }}
+        {{ form_row(form.niEmployerRate) }}
+        {{ form_row(form.employerNiThreshold) }}
+    </div>
+</div>
+
+<div class="form-section">
+    <h3 class="form-section-title">Workplace pension</h3>
+    <div class="form-grid">
+        {{ form_row(form.pensionLower) }}
+        {{ form_row(form.pensionUpper) }}
+        {{ form_row(form.pensionEmployeeRate) }}
+        {{ form_row(form.pensionEmployerRate) }}
+    </div>
+</div>
+
+<div class="form-section">
+    <h3 class="form-section-title">Student loans</h3>
+    <div class="form-grid">
+        {{ form_row(form.studentLoanPlan1Threshold) }}
+        {{ form_row(form.studentLoanPlan2Threshold) }}
+        {{ form_row(form.studentLoanPlan4Threshold) }}
+        {{ form_row(form.studentLoanPlan5Threshold) }}
+        {{ form_row(form.studentLoanPostgradThreshold) }}
+        {{ form_row(form.studentLoanRate) }}
+        {{ form_row(form.studentLoanPostgradRate) }}
+    </div>
+</div>
+
+<div class="form-section">
+    <h3 class="form-section-title">Holiday &amp; Employment Allowance</h3>
+    <div class="form-grid">
+        {{ form_row(form.holidayAccrualRate) }}
+        {{ form_row(form.employmentAllowance) }}
+        {{ form_row(form.active) }}
+    </div>
+</div>

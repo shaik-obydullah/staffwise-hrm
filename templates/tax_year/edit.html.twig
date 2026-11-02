@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit {{ taxYear.name }} · StaffWise HRM{% endblock %}
+{% block page_title %}Edit tax year{% endblock %}
+{% block page_subtitle %}{{ taxYear.name }}{% if taxYear.active %} · currently active{% endif %}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_tax_years') }}">Back to tax years</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {{ form_start(form) }}
+            {% include 'tax_year/_fields.html.twig' with {form: form} %}
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Save tax year</button>
+                <a class="btn btn-outline" href="{{ path('app_tax_years') }}">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

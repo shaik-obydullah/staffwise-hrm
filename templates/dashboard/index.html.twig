@@ -1,0 +1,258 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Dashboard · StaffWise HRM{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Workforce and payroll overview{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_employee_new') }}">Add employee</a>
+    <a class="btn btn-primary" href="{{ path('app_payroll_new') }}">Start payroll</a>
+{% endblock %}
+
+{% block content %}
+    <div class="hero">
+        <div>
+            <h2>Welcome back</h2>
+            <p>{{ headcount }} active {{ headcount == 1 ? 'employee' : 'employees' }}{% if activeTaxYear %} · Tax year {{ activeTaxYear.name }} rates in use{% endif %}</p>
+        </div>
+        <div class="hero-metric">
+            <div class="label">Next payroll date</div>
+            <div class="value">{{ nextPayDate ? nextPayDate|date('j M Y') : 'Not scheduled' }}</div>
+            {% if draftRuns|length > 0 %}
+                <div class="help" style="color:#a7c4e0">{{ draftRuns|length }} draft {{ draftRuns|length == 1 ? 'run' : 'runs' }} awaiting review</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-4 mt-4">
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Headcount</span>
+                <span class="stat-value">{{ headcount }}</span>
+                <span class="stat-note">Active employees</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Latest HMRC liability</span>
+                <span class="stat-value">{{ latestFinalised ? ui.money(latestFinalised.hmrcLiabilityTotal) : '—' }}</span>
+                <span class="stat-note">{{ latestFinalised ? 'Pay date ' ~ latestFinalised.payDate|date('j M Y') : 'No finalised payroll yet' }}</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Tax year liability</span>
+                <span class="stat-value">{{ ui.money(activeTaxYearLiability) }}</span>
+                <span class="stat-note">{{ activeTaxYear ? activeTaxYear.name ~ ' PAYE, NI and student loans' : 'No active tax year' }}</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="stat">
+                <span class="stat-label">Holiday attention</span>
+                <span class="stat-value">{{ holidayAttention|length }}</span>
+                <span class="stat-note">{{ holidayAttention|length == 1 ? 'Employee below one day' : 'Employees below one day' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="split mt-4">
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Recent payroll</h3>
+                        <div class="card-sub">Latest runs and their HMRC liability</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_payroll_index') }}">View all →</a>
+                </div>
+
+                {% if recentRuns|length == 0 %}
+                    <div class="empty">
+                        <strong>No payroll runs yet</strong>
+                        Create a run to calculate pay, deductions and take-home pay.
+                        <div class="mt-3"><a class="btn btn-primary btn-sm" href="{{ path('app_payroll_new') }}">Start payroll</a></div>
+                    </div>
+                {% else %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pay date</th>
+                                    <th>Period</th>
+                                    <th>Status</th>
+                                    <th class="num">Gross</th>
+                                    <th class="num">HMRC</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for run in recentRuns %}
+                                    <tr>
+                                        <td class="nowrap"><a class="table-link" href="{{ path('app_payroll_show', {id: run.id}) }}">{{ run.payDate ? run.payDate|date('j M Y') : '—' }}</a></td>
+                                        <td class="nowrap small muted">{{ run.periodStart ? run.periodStart|date('j M') : '' }} – {{ run.periodEnd ? run.periodEnd|date('j M Y') : '' }}</td>
+                                        <td>{{ ui.status_badge(run.status) }}</td>
+                                        <td class="num">{{ ui.money(run.grossTotal) }}</td>
+                                        <td class="num">{{ ui.money(run.hmrcLiabilityTotal) }}</td>
+                                        <td class="right"><a class="btn btn-outline btn-sm" href="{{ path('app_payroll_show', {id: run.id}) }}">Open</a></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Active employees</h3>
+                        <div class="card-sub">Quick access to the workforce</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_employees') }}">All employees →</a>
+                </div>
+
+                {% if activeEmployees|length == 0 %}
+                    <div class="empty">
+                        <strong>No employees yet</strong>
+                        Add your first employee to start processing payroll.
+                    </div>
+                {% else %}
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Role</th>
+                                    <th>Frequency</th>
+                                    <th class="num">Hourly rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for employee in activeEmployees %}
+                                    <tr>
+                                        <td>
+                                            <div class="employee-cell">
+                                                <div class="avatar">{{ employee.initials }}</div>
+                                                <div>
+                                                    <a class="employee-name" href="{{ path('app_employee_show', {id: employee.id}) }}">{{ employee.fullName }}</a>
+                                                    <div class="employee-meta">{{ employee.department ?: 'No department' }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ employee.jobTitle ?: '—' }}</td>
+                                        <td class="small">{{ employee.payFrequency|capitalize }}</td>
+                                        <td class="num">{{ ui.money(employee.hourlyRate) }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Upcoming payroll</h3>
+                        <div class="card-sub">Draft runs needing review</div>
+                    </div>
+                </div>
+                {% if draftRuns|length == 0 %}
+                    <p class="muted small">No draft payroll runs. <a href="{{ path('app_payroll_new') }}">Start one now</a>.</p>
+                {% else %}
+                    {% for run in draftRuns|slice(0, 4) %}
+                        <div class="tile mb-2">
+                            <div class="tile-label">{{ run.frequency|capitalize }} payroll</div>
+                            <div class="tile-value" style="font-size:16px">{{ run.payDate ? run.payDate|date('j M Y') : 'No date' }}</div>
+                            <div class="small muted">{{ run.payslips|length }} payslips · {{ ui.money(run.grossTotal) }} gross</div>
+                            <div class="mt-2"><a class="btn btn-outline btn-sm" href="{{ path('app_payroll_show', {id: run.id}) }}">Review run</a></div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Current tax rates</h3>
+                        <div class="card-sub">{{ activeTaxYear ? activeTaxYear.name : 'Not configured' }}</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_tax_years') }}">Manage →</a>
+                </div>
+                {% if activeTaxYear %}
+                    <div class="tiles">
+                        <div class="tile">
+                            <div class="tile-label">Personal allowance</div>
+                            <div class="tile-value" style="font-size:16px">{{ ui.money(activeTaxYear.personalAllowance) }}</div>
+                        </div>
+                        <div class="tile">
+                            <div class="tile-label">Basic rate</div>
+                            <div class="tile-value" style="font-size:16px">{{ activeTaxYear.basicRate|number_format(2) }}%</div>
+                        </div>
+                        <div class="tile">
+                            <div class="tile-label">Employee NI</div>
+                            <div class="tile-value" style="font-size:16px">{{ activeTaxYear.niEmployeeRate|number_format(2) }}%</div>
+                        </div>
+                        <div class="tile">
+                            <div class="tile-label">Holiday accrual</div>
+                            <div class="tile-value" style="font-size:16px">{{ activeTaxYear.holidayAccrualRate|number_format(2) }}%</div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="notice warn">No active tax year. <a href="{{ path('app_tax_year_new') }}">Create rates</a> before running payroll.</div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">Upcoming leave</h3>
+                        <div class="card-sub">Booked holidays</div>
+                    </div>
+                    <a class="card-link" href="{{ path('app_holidays') }}">Holidays →</a>
+                </div>
+                {% if upcomingBookings|length == 0 %}
+                    <p class="muted small">No upcoming holiday bookings.</p>
+                {% else %}
+                    <table>
+                        <tbody>
+                        {% for booking in upcomingBookings|slice(0, 4) %}
+                            <tr>
+                                <td>
+                                    <a class="employee-name" href="{{ path('app_holiday_show', {id: booking.employee.id}) }}">{{ booking.employee.fullName }}</a>
+                                    <div class="employee-meta">{{ booking.startDate|date('j M') }} – {{ booking.endDate|date('j M Y') }}</div>
+                                </td>
+                                <td class="num small">{{ ui.hours(booking.hours) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+
+            {% if holidayAttention|length > 0 %}
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Holiday balances to review</h3>
+                            <div class="card-sub">Below one contracted day</div>
+                        </div>
+                    </div>
+                    <table>
+                        <tbody>
+                        {% for item in holidayAttention %}
+                            <tr>
+                                <td><a class="employee-name" href="{{ path('app_holiday_show', {id: item.employee.id}) }}">{{ item.employee.fullName }}</a></td>
+                                <td class="num"><span class="badge {{ item.balance < 0 ? 'badge-red' : 'badge-amber' }}">{{ ui.hours(item.balance) }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

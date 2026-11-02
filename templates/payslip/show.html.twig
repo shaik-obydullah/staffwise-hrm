@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Payslip · {{ payslip.employee.fullName }} · StaffWise HRM{% endblock %}
+{% block page_title %}Payslip{% endblock %}
+{% block page_subtitle %}{{ payslip.employee.fullName }} · {{ payslip.periodLabel }}{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_payroll_show', {id: run.id}) }}">Back to run</a>
+    <a class="btn btn-outline" href="{{ path('app_employee_show', {id: payslip.employee.id}) }}">Employee</a>
+    <a class="btn btn-primary" href="{{ path('app_payslip_print', {id: payslip.id}) }}">Print / Save PDF</a>
+{% endblock %}
+
+{% block content %}
+    <div class="grid grid-3">
+        <div class="card"><div class="stat"><span class="stat-label">Gross pay</span><span class="stat-value">{{ ui.money(payslip.grossPay) }}</span><span class="stat-note">{{ payslip.taxCode }} · NI {{ payslip.niCategory }}</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Total deductions</span><span class="stat-value">{{ ui.money(payslip.paye + payslip.employeeNi + payslip.pensionEmployee + payslip.studentLoan) }}</span><span class="stat-note">PAYE, NI, pension and student loan</span></div></div>
+        <div class="card"><div class="stat"><span class="stat-label">Net pay</span><span class="stat-value">{{ ui.money(payslip.netPay) }}</span><span class="stat-note">Take-home for this period</span></div></div>
+    </div>
+
+    <div class="split mt-4">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Earnings and deductions</h3>
+                    <div class="card-sub">{{ run.periodStart|date('j M Y') }} – {{ run.periodEnd|date('j M Y') }}</div>
+                </div>
+                <span class="badge badge-green">Finalised</span>
+            </div>
+            <table class="payslip-lines">
+                <thead><tr><th>Description</th><th class="num">Amount</th></tr></thead>
+                <tbody>
+                    <tr><td>Basic pay ({{ payslip.hoursWorked|number_format(2) }} hours @ {{ ui.money(payslip.hourlyRate) }})</td><td class="num">{{ ui.money(payslip.basicPay) }}</td></tr>
+                    <tr><td>Overtime ({{ payslip.overtimeHours|number_format(2) }} hours)</td><td class="num">{{ ui.money(payslip.overtimePay) }}</td></tr>
+                    <tr><td>Bonus and additional payments</td><td class="num">{{ ui.money(payslip.bonus) }}</td></tr>
+                    <tr class="subtotal"><td>Gross earnings</td><td class="num">{{ ui.money(payslip.grossPay) }}</td></tr>
+                    <tr><td>PAYE income tax</td><td class="num">−{{ ui.money(payslip.paye) }}</td></tr>
+                    <tr><td>Employee National Insurance</td><td class="num">−{{ ui.money(payslip.employeeNi) }}</td></tr>
+                    <tr><td>Employee pension contribution</td><td class="num">−{{ ui.money(payslip.pensionEmployee) }}</td></tr>
+                    <tr><td>Student loan deduction</td><td class="num">−{{ ui.money(payslip.studentLoan) }}</td></tr>
+                    <tr class="total"><td>Net pay</td><td class="num">{{ ui.money(payslip.netPay) }}</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 class="card-title mb-2">Employee</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Name</th><td>{{ payslip.employee.fullName }}</td></tr>
+                        <tr><th>Job title</th><td>{{ payslip.employee.jobTitle ?: '—' }}</td></tr>
+                        <tr><th>Department</th><td>{{ payslip.employee.department ?: '—' }}</td></tr>
+                        <tr><th>NI number</th><td>{{ payslip.employee.niNumber ?: '—' }}</td></tr>
+                        <tr><th>Tax code</th><td>{{ payslip.taxCode }}</td></tr>
+                        <tr><th>NI category</th><td>{{ payslip.niCategory }}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h3 class="card-title mb-2">Employer contributions</h3>
+                <table>
+                    <tbody>
+                        <tr><th>Employer NI</th><td class="num">{{ ui.money(payslip.employerNi) }}</td></tr>
+                        <tr><th>Employer pension</th><td class="num">{{ ui.money(payslip.pensionEmployer) }}</td></tr>
+                        <tr><th>Employer cost</th><td class="num"><strong>{{ ui.money(payslip.employerCost) }}</strong></td></tr>
+                    </tbody>
+                </table>
+                <div class="small muted mt-2">Payment reference {{ run.paymentReference }}</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

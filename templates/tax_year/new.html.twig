@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}New tax year · StaffWise HRM{% endblock %}
+{% block page_title %}New tax year{% endblock %}
+{% block page_subtitle %}Configure effective-dated UK statutory rates{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_tax_years') }}">Back to tax years</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {{ form_start(form) }}
+            {% include 'tax_year/_fields.html.twig' with {form: form} %}
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Create tax year</button>
+                <a class="btn btn-outline" href="{{ path('app_tax_years') }}">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

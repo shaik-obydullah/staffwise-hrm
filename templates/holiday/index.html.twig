@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Holidays · StaffWise HRM{% endblock %}
+{% block page_title %}Holiday &amp; leave{% endblock %}
+{% block page_subtitle %}Entitlement, accrual, bookings and balances{% endblock %}
+
+{% block content %}
+    <div class="split">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Employee balances</h3>
+                    <div class="card-sub">Holiday is accrued from finalised payroll and reduced by bookings</div>
+                </div>
+            </div>
+            {% if rows|length == 0 %}
+                <div class="empty">
+                    <strong>No active employees</strong>
+                    Add employees before managing holiday.
+                </div>
+            {% else %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th class="num">Entitlement</th>
+                                <th class="num">Accrued</th>
+                                <th class="num">Taken / booked</th>
+                                <th class="num">Balance</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    <td>
+                                        <div class="employee-cell">
+                                            <div class="avatar">{{ row.employee.initials }}</div>
+                                            <div>
+                                                <a class="employee-name" href="{{ path('app_holiday_show', {id: row.employee.id}) }}">{{ row.employee.fullName }}</a>
+                                                <div class="employee-meta">{{ row.employee.contractedWeeklyHours|number_format(1) }} h/week · {{ row.employee.holidayEntitlementWeeks|number_format(1) }} weeks</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="num">{{ ui.hours(row.entitlement) }}</td>
+                                    <td class="num">{{ ui.hours(row.accrued) }}</td>
+                                    <td class="num">{{ ui.hours(row.taken) }}</td>
+                                    <td class="num">
+                                        <span class="badge {{ row.balance < 0 ? 'badge-red' : (row.balance < row.employee.contractedWeeklyHours / 5 ? 'badge-amber' : 'badge-green') }}">{{ ui.hours(row.balance) }}</span>
+                                    </td>
+                                    <td class="right"><a class="btn btn-outline btn-sm" href="{{ path('app_holiday_show', {id: row.employee.id}) }}">Manage</a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">Upcoming leave</h3>
+                    <div class="card-sub">Booked leave from today</div>
+                </div>
+            </div>
+            {% if upcomingBookings|length == 0 %}
+                <p class="muted small">No upcoming bookings.</p>
+            {% else %}
+                <table>
+                    <tbody>
+                        {% for booking in upcomingBookings %}
+                            <tr>
+                                <td>
+                                    <a class="employee-name" href="{{ path('app_holiday_show', {id: booking.employee.id}) }}">{{ booking.employee.fullName }}</a>
+                                    <div class="employee-meta">{{ booking.startDate|date('j M') }} – {{ booking.endDate|date('j M Y') }}</div>
+                                </td>
+                                <td class="num small">{{ ui.hours(booking.hours) }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Audit trail · StaffWise HRM{% endblock %}
+{% block page_title %}Audit trail{% endblock %}
+{% block page_subtitle %}Recorded administrative and payroll activity{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_settings') }}">Settings</a>
+{% endblock %}
+
+{% block content %}
+    <div class="card">
+        {% if auditLogs|length == 0 %}
+            <div class="empty">
+                <strong>No activity recorded</strong>
+                Actions such as employee updates, payroll finalisation and rate changes will appear here.
+            </div>
+        {% else %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in auditLogs %}
+                            <tr>
+                                <td class="nowrap small">{{ log.createdAt|date('j M Y H:i:s') }}</td>
+                                <td class="small">{{ log.actor }}</td>
+                                <td><span class="audit-action">{{ log.action }}</span></td>
+                                <td class="small muted">{{ log.entityType ?: '—' }}{{ log.entityId ? ' #' ~ log.entityId : '' }}</td>
+                                <td class="small detail-cell">{{ log.details ?: '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

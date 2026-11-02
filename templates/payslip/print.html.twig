@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+{% import '_macros.html.twig' as ui %}
+
+{% block title %}Payslip {{ payslip.periodLabel }} · {{ payslip.employee.fullName }}{% endblock %}
+{% block page_title %}Payslip document{% endblock %}
+{% block page_subtitle %}Print-ready copy{% endblock %}
+
+{% block topbar_actions %}
+    <a class="btn btn-outline" href="{{ path('app_payslip_show', {id: payslip.id}) }}">Back to payslip</a>
+    <button class="btn btn-primary no-print" type="button" onclick="window.print()">Print / Save as PDF</button>
+{% endblock %}
+
+{% block content %}
+    <div class="document">
+        <div class="document-head">
+            <div>
+                <div class="brand" style="padding:0 0 6px">
+                    <div class="brand-mark">SW</div>
+                    <div>
+                        <div class="brand-name" style="color:var(--ink)">StaffWise</div>
+                        <div class="brand-sub">UK HR &amp; Payroll</div>
+                    </div>
+                </div>
+                <h2 class="document-title">Payslip</h2>
+            </div>
+            <div class="document-meta">
+                <div><strong>Pay date:</strong> {{ run.payDate ? run.payDate|date('j F Y') : '—' }}</div>
+                <div><strong>Period:</strong> {{ run.periodStart|date('j M Y') }} – {{ run.periodEnd|date('j M Y') }}</div>
+                <div><strong>Frequency:</strong> {{ run.frequency|capitalize }}</div>
+                <div><strong>Tax year:</strong> {{ run.taxYear.name }}</div>
+                <div><strong>Reference:</strong> {{ run.paymentReference }}</div>
+            </div>
+        </div>
+
+        <div class="doc-grid">
+            <div class="doc-block">
+                <h4>Employee</h4>
+                <p><strong>{{ payslip.employee.fullName }}</strong></p>
+                <p>{{ payslip.employee.jobTitle ?: 'Employee' }}{% if payslip.employee.department %} · {{ payslip.employee.department }}{% endif %}</p>
+                <p>NI number: {{ payslip.employee.niNumber ?: '—' }}</p>
+                <p>Tax code: {{ payslip.taxCode }} · NI category: {{ payslip.niCategory }}</p>
+            </div>
+            <div class="doc-block">
+                <h4>Payment</h4>
+                <p>Gross pay: <strong>{{ ui.money(payslip.grossPay) }}</strong></p>
+                <p>Net pay: <strong>{{ ui.money(payslip.netPay) }}</strong></p>
+                <p>Hourly rate: {{ ui.money(payslip.hourlyRate) }}</p>
+                <p>Hours: {{ payslip.hoursWorked|number_format(2) }}{% if payslip.overtimeHours > 0 %} (+{{ payslip.overtimeHours|number_format(2) }} overtime){% endif %}</p>
+            </div>
+        </div>
+
+        <table class="payslip-lines">
+            <thead>
+                <tr><th>Earnings</th><th class="num">Amount</th><th>Deductions</th><th class="num">Amount</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Basic pay</td><td class="num">{{ ui.money(payslip.basicPay) }}</td>
+                    <td>PAYE income tax</td><td class="num">{{ ui.money(payslip.paye) }}</td>
+                </tr>
+                <tr>
+                    <td>Overtime</td><td class="num">{{ ui.money(payslip.overtimePay) }}</td>
+                    <td>Employee National Insurance</td><td class="num">{{ ui.money(payslip.employeeNi) }}</td>
+                </tr>
+                <tr>
+                    <td>Bonus</td><td class="num">{{ ui.money(payslip.bonus) }}</td>
+                    <td>Employee pension</td><td class="num">{{ ui.money(payslip.pensionEmployee) }}</td>
+                </tr>
+                <tr>
+                    <td></td><td class="num"></td>
+                    <td>Student loan</td><td class="num">{{ ui.money(payslip.studentLoan) }}</td>
+                </tr>
+                <tr class="subtotal">
+                    <td>Gross earnings</td><td class="num">{{ ui.money(payslip.grossPay) }}</td>
+                    <td>Total deductions</td><td class="num">{{ ui.money(payslip.paye + payslip.employeeNi + payslip.pensionEmployee + payslip.studentLoan) }}</td>
+                </tr>
+                <tr class="total">
+                    <td colspan="3">Net pay</td><td class="num">{{ ui.money(payslip.netPay) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="doc-grid mt-4">
+            <div class="doc-block">
+                <h4>Employer contributions</h4>
+                <p>Employer National Insurance: {{ ui.money(payslip.employerNi) }}</p>
+                <p>Employer pension: {{ ui.money(payslip.pensionEmployer) }}</p>
+                <p>Total employer cost: <strong>{{ ui.money(payslip.employerCost) }}</strong></p>
+            </div>
+            <div class="doc-block">
+                <h4>Statutory reference</h4>
+                <p>HMRC payment reference: {{ run.paymentReference }}</p>
+                <p>HMRC due date: {{ run.hmrcDueDate ? run.hmrcDueDate|date('j F Y') : '—' }}</p>
+            </div>
+        </div>
+
+        <div class="doc-footer">
+            Generated by StaffWise HRM on {{ 'now'|date('j F Y H:i') }}. This payslip is a record of earnings and statutory deductions for the period shown.
+        </div>
+    </div>
+{% endblock %}
