@@ -3,10 +3,13 @@ services:
     build: .
     ports:
       - "${APP_PORT:-8067}:80"
+    env_file:
+      # Optional local overrides, including the real APP_SECRET. Not committed.
+      - path: .env.local
+        required: false
     environment:
       APP_ENV: prod
       APP_DEBUG: "0"
-      APP_SECRET: "${APP_SECRET:-change-me-in-env-local}"
       DATABASE_URL: "mysql://staffwise:staffwise@db:3306/staffwise?serverVersion=8.4&charset=utf8mb4"
       RUN_MIGRATIONS: "1"
     volumes:

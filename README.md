@@ -123,8 +123,16 @@ Docker Compose reads these optional environment variables:
 | --- | --- | --- |
 | `APP_PORT` | `8067` | Host port mapped to the Symfony app |
 | `PHPMYADMIN_PORT` | `8068` | Host port mapped to phpMyAdmin |
-| `APP_SECRET` | built-in development value | Symfony application secret |
+| `APP_SECRET` | value from `.env.local`, else a non-secret placeholder | Symfony application secret |
 | `RUN_MIGRATIONS` | `1` | Run cache clear, migrations and rate seeding on container start |
+
+Generate a real application secret into the gitignored `.env.local` file (Docker Compose and Symfony both load it):
+
+```bash
+printf 'APP_SECRET=%s\n' "$(openssl rand -hex 16)" > .env.local
+```
+
+Never commit `.env.local` or any other file containing a real secret.
 
 The database connection is defined in `compose.yaml`:
 
@@ -132,7 +140,7 @@ The database connection is defined in `compose.yaml`:
 mysql://staffwise:staffwise@db:3306/staffwise?serverVersion=8.4&charset=utf8mb4
 ```
 
-For anything other than local evaluation, change the MySQL credentials in `compose.yaml` and set a strong `APP_SECRET`. The defaults are development convenience values and are committed to the repository.
+For anything other than local evaluation, change the MySQL credentials in `compose.yaml` and set a strong `APP_SECRET` in `.env.local` (or via the deployment environment). The committed `.env` files contain only a non-secret placeholder, never a real application secret.
 
 ## Database Access (phpMyAdmin)
 
